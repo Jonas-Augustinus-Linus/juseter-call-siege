@@ -11,8 +11,8 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <link rel="preconnect" href="https://script.google.com" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=40" />
-  <link rel="stylesheet" href="landing.css?v=40" />
+  <link rel="stylesheet" href="styles.css?v=41" />
+  <link rel="stylesheet" href="landing.css?v=41" />
 </head>
 <body class="landing-body">
   <header class="landing-hero">
@@ -96,6 +96,19 @@
       </div>
     </section>
 
+    <details class="card trade-market-card" id="tradeMarketCard">
+      <summary>🏪 거래소 활발 거래 TOP <span id="tmCount">10</span></summary>
+      <div class="tm-body">
+        <div class="tm-meta" id="tmMeta"></div>
+        <div class="tm-body-inner" id="tmBody">
+          <div class="hint">로딩 중…</div>
+        </div>
+        <div class="tm-footer">
+          <a href="https://classicbaram.gg/trade" target="_blank" rel="noopener">전체 거래 보기 (클바지지) ↗</a>
+        </div>
+      </div>
+    </details>
+
     <details class="card guidelines-card" id="guidelinesCard">
       <summary>📜 연합 지침사항 열람</summary>
       <div class="guidelines-content" id="guidelinesContent">
@@ -159,7 +172,7 @@
     </div>
   </footer>
 
-  <script src="shared.js?v=40" defer></script>
-  <script src="landing.js?v=40" defer></script>
+  <script src="shared.js?v=41" defer></script>
+  <script src="landing.js?v=41" defer></script>
 </body>
 </html>

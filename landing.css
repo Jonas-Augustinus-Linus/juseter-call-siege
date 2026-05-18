@@ -894,6 +894,99 @@
   margin-top: 10px;
 }
 
+/* ===== 거래소 시세 위젯 ===== */
+
+.trade-market-card > summary {
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  list-style: none;
+  padding: 6px 0;
+  transition: color 0.12s;
+}
+
+.trade-market-card > summary::-webkit-details-marker { display: none; }
+.trade-market-card > summary::before {
+  content: "▸ ";
+  display: inline-block;
+  transition: transform 0.15s;
+  color: var(--muted);
+}
+.trade-market-card[open] > summary::before { transform: rotate(90deg); }
+.trade-market-card > summary:hover { color: var(--accent); }
+
+.tm-body { margin-top: 12px; }
+
+.tm-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tm-table th {
+  text-align: left;
+  padding: 6px 8px;
+  font-size: 10.5px;
+  color: var(--muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+.tm-table th.num { text-align: right; }
+
+.tm-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(110, 118, 129, 0.10);
+  vertical-align: middle;
+}
+
+.tm-table td.num { text-align: right; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.tm-table td.num small { color: var(--muted); margin-left: 2px; }
+
+.tm-table td.sell { color: #69d586; font-weight: 700; }
+.tm-table td.buy { color: #6fb5ff; font-weight: 700; }
+.tm-table td.muted { color: var(--muted); }
+
+.tm-table .tm-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tm-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+.tm-table tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+.tm-footer {
+  margin-top: 10px;
+  text-align: right;
+  font-size: 11px;
+}
+
+.tm-footer a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.tm-footer a:hover { color: var(--accent); }
+
 .lord-guild { display: inline-block; }
 .lord-guild.in-alliance {
   color: var(--accent);

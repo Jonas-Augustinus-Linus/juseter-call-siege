@@ -135,6 +135,17 @@ async function apiGuildsInfo() {
   } catch { return null; }
 }
 
+async function apiTradeMarket() {
+  try {
+    const res = await fetch(`${getEndpoint()}?action=tradeMarket`);
+    if (!res.ok) return null;
+    const d = await res.json();
+    if (!d.ok) return null;
+    writeCache("trade_market", d);
+    return d;
+  } catch { return null; }
+}
+
 function renderCastleLords(lords) {
   const castles = ["주작성", "현무성", "청룡성", "백호성"];
   castles.forEach((c) => {
@@ -231,6 +242,68 @@ function setupCastleHistory() {
     if (wrap.open && !loaded) {
       loaded = true;
       loadCastleHistory();
+    }
+  });
+}
+
+// ---- 거래소 시세 위젯 ----
+
+function fmtPrice(n) {
+  if (!n) return "-";
+  if (n >= 100000000) return (n / 100000000).toFixed(1) + "억";
+  if (n >= 10000) return (n / 10000).toFixed(0) + "만";
+  return n.toLocaleString();
+}
+
+function renderTradeMarket(data) {
+  const body = $("#tmBody");
+  const meta = $("#tmMeta");
+  const cnt = $("#tmCount");
+  if (!body) return;
+  if (!data || !data.items || !data.items.length) {
+    body.innerHTML = `<div class="hint">${data ? "거래 데이터 없음" : "불러오기 실패"}</div>`;
+    if (meta) meta.textContent = "";
+    return;
+  }
+  const top = data.items.slice(0, 10);
+  if (cnt) cnt.textContent = top.length;
+  if (meta) {
+    const fetched = data.fetchedAt || "";
+    const range = data.range || {};
+    meta.innerHTML = `<span class="tm-fetched">갱신: ${escapeHtml(fetched)}</span>` +
+                     `<span class="tm-source">출처: ${escapeHtml(data.source || "")}</span>`;
+  }
+  body.innerHTML = `
+    <table class="tm-table">
+      <thead><tr><th>아이템</th><th class="num">거래</th><th class="num">평균 판매</th><th class="num">평균 구매</th></tr></thead>
+      <tbody>${top.map((it) => `
+        <tr>
+          <td class="tm-item">
+            ${it.iconUrl ? `<img src="${escapeHtml(it.iconUrl)}" alt="" class="tm-icon" loading="lazy">` : ""}
+            <strong>${escapeHtml(it.name)}</strong>
+          </td>
+          <td class="num muted">${it.count}<small>건</small></td>
+          <td class="num sell">${fmtPrice(it.sellAvg)}</td>
+          <td class="num buy">${fmtPrice(it.buyAvg)}</td>
+        </tr>`).join("")}</tbody>
+    </table>`;
+}
+
+async function loadTradeMarket() {
+  const cached = readCache("trade_market");
+  if (cached) renderTradeMarket(cached);
+  const fresh = await apiTradeMarket();
+  if (fresh) renderTradeMarket(fresh);
+}
+
+function setupTradeMarket() {
+  const wrap = $("#tradeMarketCard");
+  if (!wrap) return;
+  let loaded = false;
+  wrap.addEventListener("toggle", () => {
+    if (wrap.open && !loaded) {
+      loaded = true;
+      loadTradeMarket();
     }
   });
 }
@@ -707,6 +780,7 @@ async function init() {
   loadHallOfFame();
   setupCastleHistory();
   setupGuildInfoDialog();
+  setupTradeMarket();
 
   // 1) 캐시 즉시 표시 (있으면) — SW 는 shared.js 가 자동 등록
   const cMembers = readCache("members") || [];

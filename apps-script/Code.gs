@@ -681,6 +681,9 @@ function doGet(e) {
     if (action === 'guildsInfo') {
       return jsonOut_({ ok: true, guilds: getGuildsInfo_() });
     }
+    if (action === 'tradeMarket') {
+      return jsonOut_(getTradeMarket_());
+    }
     return jsonOut_({ ok: false, error: 'unknown action' });
   } catch (err) {
     return jsonOut_({ ok: false, error: safeErr_(err) });
@@ -1539,6 +1542,86 @@ function getArchivedSeason_(season, scope) {
 // CORS 우회용. 1분 캐시 + 입력 검증.
 // 직업 코드: Warrior(전사), Sheif(도적), Magic(주술사), Hill(도사)
 // ====================================================
+
+// ====================================================
+// 거래소 시세 위젯 — classicbaram.gg /api/trades 스크래핑
+// 1시간 캐시. 최근 500건 거래 집계 → TOP 10 활발 아이템.
+// ====================================================
+
+function getTradeMarket_() {
+  const cacheKey = 'trade_market_v1';
+  try {
+    const cache = CacheService.getScriptCache();
+    const hit = cache.get(cacheKey);
+    if (hit) return JSON.parse(hit);
+  } catch (_) {}
+
+  try {
+    const res = UrlFetchApp.fetch('https://classicbaram.gg/api/trades?limit=500', {
+      method: 'get',
+      muteHttpExceptions: true,
+      headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' },
+    });
+    if (res.getResponseCode() !== 200) {
+      return { ok: false, error: 'upstream ' + res.getResponseCode() };
+    }
+    const trades = JSON.parse(res.getContentText());
+    if (!Array.isArray(trades)) return { ok: false, error: 'unexpected response' };
+
+    // 아이템별 집계
+    const agg = {};
+    let oldest = '', newest = '';
+    trades.forEach((t) => {
+      const item = t && t.item || {};
+      const name = (item.name || '').trim();
+      const price = parseInt(t && t.price, 10) || 0;
+      const ttype = t && t.tradeType; // 1=판매? 0=구매?
+      const at = (t && t.createdAt || '').toString();
+      if (at && (!oldest || at < oldest)) oldest = at;
+      if (at && at > newest) newest = at;
+      if (!name || !price) return;
+      if (!agg[name]) {
+        agg[name] = {
+          name,
+          iconUrl: item.iconUrl || '',
+          itemId: item.id || 0,
+          sellPrices: [],
+          buyPrices: [],
+        };
+      }
+      if (ttype === 1) agg[name].sellPrices.push(price);
+      else agg[name].buyPrices.push(price);
+    });
+
+    // 정렬: 총 거래 수 desc
+    const rows = Object.values(agg).map((o) => {
+      const sellAvg = o.sellPrices.length ? Math.round(o.sellPrices.reduce((a,b)=>a+b,0) / o.sellPrices.length) : 0;
+      const buyAvg = o.buyPrices.length ? Math.round(o.buyPrices.reduce((a,b)=>a+b,0) / o.buyPrices.length) : 0;
+      const allPrices = o.sellPrices.concat(o.buyPrices);
+      const minP = allPrices.length ? Math.min.apply(null, allPrices) : 0;
+      const maxP = allPrices.length ? Math.max.apply(null, allPrices) : 0;
+      return {
+        name: o.name, iconUrl: o.iconUrl, itemId: o.itemId,
+        count: o.sellPrices.length + o.buyPrices.length,
+        sellCount: o.sellPrices.length, buyCount: o.buyPrices.length,
+        sellAvg, buyAvg, minPrice: minP, maxPrice: maxP,
+      };
+    }).sort((a, b) => b.count - a.count).slice(0, 15);
+
+    const out = {
+      ok: true,
+      total: trades.length,
+      range: { oldest, newest },
+      fetchedAt: Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm'),
+      items: rows,
+      source: 'classicbaram.gg',
+    };
+    try { CacheService.getScriptCache().put(cacheKey, JSON.stringify(out), 3600); } catch (_) {}
+    return out;
+  } catch (err) {
+    return { ok: false, error: 'fetch fail: ' + (err && err.message || err) };
+  }
+}
 
 function proxyBarambookScore_(jobCode, hp, mp) {
   const validJobs = ['Warrior', 'Sheif', 'Magic', 'Hill'];
